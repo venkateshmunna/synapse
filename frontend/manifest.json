@@ -1,0 +1,21 @@
+{
+  "name": "SYNAPSE",
+  "short_name": "SYNAPSE",
+  "description": "Multi-LLM Debate & Answer Synthesis Platform",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#171717",
+  "theme_color": "#00d4ff",
+  "icons": [
+    {
+      "src": "assets/image.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "assets/image.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

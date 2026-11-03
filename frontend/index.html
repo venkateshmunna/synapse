@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SYNAPSE — Multi-LLM Debate Platform</title>
+<link rel="manifest" href="manifest.json"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#171717;
+  --bg2:#212121;
+  --bg3:#1f1f1f;
+  --surface:#262626;
+  --surface2:#303030;
+  --border:rgba(255,255,255,0.08);
+  --border2:rgba(255,255,255,0.14);
+  --accent:#00d4ff;
+  --accent2:#d4d4d4;
+  --accent3:#00ff9d;
+  --warn:#ff6b35;
+  --purple:#a855f7;
+  --purple2:#b3b3b3;
+  --text:#ECECEC;
+  --text2:#A1A1A1;
+  --text3:#707070;
+  --llm1:#00d4ff;
+  --llm2:#00ff9d;
+  --llm3:#a855f7;
+  --judge:#FFFFFF;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;line-height:1.6;-webkit-font-smoothing:antialiased;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:#171717;border-bottom:1px solid rgba(255,255,255,0.06);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;}
+.nav-logo{font-size:15px;font-weight:600;color:#ECECEC;cursor:pointer;}
+.nav-logo span{color:var(--accent);}
+.nav-links{display:flex;gap:0.5rem;}
+.nav-btn{background:transparent;border:none;color:#A1A1A1;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:500;padding:0.4rem 0.8rem;border-radius:8px;cursor:pointer;transition:all 0.2s;}
+.nav-btn:hover,.nav-btn.active{background:#2a2a2a;color:#ECECEC;}
+.nav-right{display:flex;align-items:center;gap:0.75rem;}
+.nav-user{width:32px;height:32px;border-radius:50%;background:#2a2a2a;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:var(--accent);cursor:pointer;}
+
+/* PAGES */
+.page{display:none;padding-top:56px;min-height:100vh;}
+.page.active{display:block;}
+
+/* LANDING */
+#page-landing{display:none;padding-top:0;}
+#page-landing.active{display:flex;flex-direction:column;}
+.hero{min-height:75vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:3rem 1.5rem;position:relative;}
+.hero-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);border-radius:100px;padding:0.35rem 1rem;font-size:0.75rem;color:var(--accent);margin-bottom:1.5rem;}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+.hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:700;line-height:1.1;letter-spacing:-0.02em;margin-bottom:1.5rem;}
+.hero h1 .line2{color:var(--accent);display:inline-block;}
+.hero-sub{font-size:1.15rem;color:var(--text2);max-width:620px;line-height:1.7;margin-bottom:2.5rem;}
+.hero-actions{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;}
+.btn-primary{background:#2F2F2F;color:#ECECEC;font-family:'Inter',sans-serif;font-weight:600;font-size:0.95rem;padding:0.85rem 2rem;border:none;border-radius:12px;cursor:pointer;transition:all 0.2s;}
+.btn-primary:hover{background:#3a3a3a;color:#fff;}
+.btn-secondary{background:transparent;color:var(--text);font-family:'Inter',sans-serif;font-weight:600;font-size:0.95rem;padding:0.85rem 2rem;border:1px solid var(--border2);border-radius:12px;cursor:pointer;transition:all 0.2s;}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+.hero-stats{display:flex;gap:3rem;margin-top:3rem;justify-content:center;}
+.stat{text-align:center;}
+.stat-num{font-size:2rem;font-weight:800;color:var(--accent);}
+.stat-label{font-size:0.75rem;color:var(--text3);margin-top:0.25rem;}
+
+/* DROPDOWN & FEATURES */
+.features-section{padding:4rem 2rem;max-width:1100px;margin:0 auto;}
+.section-tag{font-size:0.8rem;color:var(--accent);letter-spacing:0.12em;font-weight:700;margin-bottom:0.5rem;}
+.section-title{font-size:2.2rem;font-weight:700;margin-bottom:1rem;}
+.section-sub{color:var(--text2);font-size:1rem;margin-bottom:2.5rem;}
+.dropdown-section{margin:1.5rem 0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.dropdown-header{padding:1.25rem 1.75rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background 0.2s;}
+.dropdown-header:hover{background:var(--surface2);}
+.dropdown-header h3{font-size:1.1rem;font-weight:700;margin:0;}
+.dropdown-toggle{font-size:1.3rem;transition:transform 0.3s;color:var(--accent);}
+.dropdown-toggle.active{transform:rotate(180deg);}
+.dropdown-content{max-height:0;overflow:hidden;transition:max-height 0.3s ease;padding:0 1.75rem;}
+.dropdown-content.active{max-height:1600px;padding:1.25rem 1.75rem;border-top:1px solid var(--border);}
+.dropdown-item{margin-bottom:1.25rem;}
+.dropdown-item:last-child{margin-bottom:0;}
+.dropdown-item-title{font-size:0.95rem;font-weight:700;color:var(--accent);margin-bottom:0.25rem;}
+.dropdown-item-desc{font-size:0.875rem;color:var(--text2);line-height:1.6;}
+
+/* APP LAYOUT */
+.app-layout{display:flex;min-height:calc(100vh - 56px);}
+.sidebar{width:240px;background:#171717;border-right:1px solid rgba(255,255,255,0.06);padding:1.5rem 0;position:sticky;top:56px;height:calc(100vh - 56px);flex-shrink:0;}
+.sidebar-section{margin-bottom:1.5rem;}
+.sidebar-label{font-size:0.7rem;color:var(--text3);font-weight:700;letter-spacing:0.1em;padding:0 1.25rem;margin-bottom:0.5rem;}
+.sidebar-item{display:flex;align-items:center;gap:0.75rem;padding:0.6rem 1.25rem;cursor:pointer;color:var(--text2);font-size:0.875rem;font-weight:500;transition:all 0.15s;}
+.sidebar-item:hover{background:#2a2a2a;color:#ECECEC;}
+.sidebar-item.active{background:#2a2a2a;color:#ECECEC;}
+.sidebar-badge{margin-left:auto;background:var(--accent);color:#000;font-size:0.65rem;font-weight:700;padding:0.1rem 0.45rem;border-radius:100px;}
+.main-content{flex:1;overflow-y:auto;}
+.content-pad{padding:24px;max-width:1200px;}
+
+/* DEBATE INTERFACE */
+.page-header{padding:1.5rem 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.page-header h1{font-size:1.6rem;font-weight:700;}
+.page-header p{font-size:0.9rem;color:var(--text2);margin-top:0.2rem;}
+.header-actions{display:flex;gap:0.75rem;}
+
+.models-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-bottom:1.5rem;}
+.model-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem;display:flex;align-items:center;gap:0.75rem;}
+.model-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.model-name{font-size:0.85rem;font-weight:700;}
+.model-role{font-size:0.7rem;color:var(--text3);}
+.model-status{font-size:0.65rem;font-weight:700;padding:0.2rem 0.5rem;border-radius:4px;margin-left:auto;}
+.status-ready{background:rgba(0,255,157,0.1);color:var(--accent3);}
+.status-thinking{background:rgba(0,212,255,0.1);color:var(--accent);animation:blink 1s infinite;}
+.status-done{background:rgba(0,255,157,0.1);color:var(--accent3);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+.question-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;}
+.question-box-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.q-label{font-size:0.8rem;font-weight:700;color:var(--accent);}
+.q-textarea{width:100%;background:var(--surface2);border:none;border-radius:14px;padding:1.25rem;color:#ECECEC;font-family:'Inter',sans-serif;font-size:0.95rem;min-height:100px;resize:vertical;outline:none;line-height:1.7;}
+.q-textarea:focus{outline:1px solid var(--accent);}
+.q-textarea::placeholder{color:#7a7a7a;}
+.q-actions{display:flex;justify-content:space-between;align-items:center;margin-top:1rem;flex-wrap:wrap;gap:0.75rem;}
+.q-meta{display:flex;gap:0.5rem;}
+.q-tag{background:var(--surface2);border-radius:6px;padding:0.35rem 0.8rem;font-size:0.75rem;color:var(--text2);cursor:pointer;}
+.q-tag.active{background:#3a3a3a;color:#ECECEC;}
+.debate-btn{background:#2F2F2F;color:#ECECEC;font-family:'Inter',sans-serif;font-weight:600;font-size:0.95rem;padding:0.85rem 2rem;border:none;border-radius:12px;cursor:pointer;transition:all 0.2s;}
+.debate-btn:hover{background:#3a3a3a;}
+.debate-btn:disabled{background:#222;color:#666;cursor:not-allowed;}
+
+.round-indicator{display:flex;gap:0.5rem;align-items:center;margin-bottom:1.5rem;}
+.round-pill{padding:0.3rem 0.9rem;border-radius:100px;font-size:0.75rem;font-weight:700;background:var(--surface2);color:var(--text3);}
+.round-pill.active{background:#3a3a3a;color:var(--accent);}
+.round-pill.done{background:rgba(0,255,157,0.1);color:var(--accent3);}
+
+.debate-arena{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.25rem;margin-bottom:1.5rem;}
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.agent-header{padding:0.85rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.75rem;}
+.agent-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;}
+.agent-body{padding:24px;min-height:180px;font-size:0.9rem;line-height:1.8;}
+.agent-placeholder{color:var(--text3);font-size:0.85rem;}
+
+.score-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:1.5rem;}
+.score-panel-title{font-size:1rem;font-weight:700;margin-bottom:1rem;}
+.score-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.25rem;}
+.score-item{background:#2f2f2f;border-radius:12px;padding:1.25rem;}
+.score-agent-name{font-size:0.85rem;font-weight:700;margin-bottom:0.75rem;}
+.score-metric{display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;margin-bottom:0.4rem;color:var(--text2);}
+.score-bar-wrap{width:80px;height:5px;background:var(--surface);border-radius:100px;overflow:hidden;}
+.score-bar-fill{height:100%;border-radius:100px;}
+.score-total{display:flex;justify-content:space-between;align-items:center;margin-top:0.85rem;padding-top:0.85rem;border-top:1px solid var(--border);font-weight:700;}
+
+.final-card{background:var(--surface);border:1px solid rgba(0,212,255,0.3);border-radius:16px;padding:24px;margin-bottom:1.5rem;}
+.final-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;}
+.final-icon{font-size:1.5rem;}
+.final-title{font-size:1.1rem;font-weight:700;color:var(--accent);}
+.final-subtitle{font-size:0.75rem;color:var(--text3);}
+.final-text{font-size:0.95rem;line-height:1.8;}
+.final-attribution{display:flex;gap:0.5rem;margin-top:1.25rem;flex-wrap:wrap;}
+.attr-tag{font-size:0.7rem;padding:0.2rem 0.6rem;border-radius:100px;font-weight:600;background:var(--surface2);}
+
+/* AUTH FORMS */
+.onboard-wrap{min-height:calc(100vh - 56px);display:flex;align-items:center;justify-content:center;padding:2rem;}
+.onboard-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:2.5rem;width:100%;max-width:440px;}
+.onboard-logo{font-size:1.3rem;font-weight:700;color:var(--accent);text-align:center;margin-bottom:1.5rem;}
+.onboard-title{font-size:1.4rem;font-weight:700;margin-bottom:0.4rem;}
+.onboard-sub{color:var(--text2);font-size:0.85rem;margin-bottom:1.5rem;}
+.form-group{margin-bottom:1.25rem;}
+.form-label{font-size:0.75rem;font-weight:600;color:var(--text2);margin-bottom:0.4rem;display:block;}
+.form-input{width:100%;background:var(--surface2);border:none;border-radius:14px;padding:0.85rem 1rem;color:#ECECEC;font-size:0.9rem;outline:none;}
+.form-input:focus{outline:1px solid var(--accent);}
+.form-switch{text-align:center;font-size:0.85rem;color:var(--text2);margin-top:1.5rem;}
+.form-switch a{color:var(--accent);cursor:pointer;text-decoration:none;}
+
+/* LISTS & TABLES */
+.history-item,.explore-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;cursor:pointer;transition:all 0.2s;margin-bottom:0.75rem;display:flex;align-items:center;gap:1rem;}
+.history-item:hover,.explore-card:hover{background:var(--surface2);}
+.history-icon{font-size:1.5rem;}
+.history-q{font-size:0.9rem;font-weight:600;}
+.history-meta{font-size:0.75rem;color:var(--text3);display:flex;gap:0.75rem;margin-top:0.25rem;}
+.explore-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;}
+
+.leaderboard-table{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.lb-header,.lb-row{display:grid;grid-template-columns:80px 1fr repeat(4,100px);padding:1rem 1.5rem;align-items:center;}
+.lb-header{border-bottom:1px solid var(--border);font-size:0.75rem;color:var(--text3);font-weight:700;}
+.lb-row{border-bottom:1px solid var(--border);font-size:0.85rem;transition:background 0.15s;}
+.lb-row:last-child{border-bottom:none;}
+.lb-rank{font-weight:700;font-size:1rem;}
+.lb-val{text-align:center;font-weight:600;}
+
+/* PROFILE HERO & STATS */
+.profile-hero{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;display:flex;align-items:center;gap:2rem;margin-bottom:1.5rem;}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800;color:#000;flex-shrink:0;}
+.profile-badges{display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap;}
+.profile-badge{background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:0.25rem 0.75rem;font-size:0.7rem;color:var(--text2);font-weight:600;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;text-align:center;}
+.stat-card-val{font-size:1.8rem;font-weight:800;color:var(--accent);}
+.stat-card-label{font-size:0.75rem;color:var(--text3);margin-top:0.25rem;}
+
+/* NOTIFICATIONS LIST */
+.notif-list{display:flex;flex-direction:column;gap:0.75rem;}
+.notif-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;display:flex;align-items:center;gap:1.25rem;transition:background 0.15s;}
+.notif-item.unread{border-left:3px solid var(--accent);}
+.notif-icon{width:40px;height:40px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+
+.chip{display:inline-flex;align-items:center;gap:0.4rem;background:var(--surface2);border-radius:100px;padding:0.25rem 0.75rem;font-size:0.75rem;color:var(--text2);}
+.chip-dot{width:6px;height:6px;border-radius:50%;}
+.btn-sm{background:transparent;border:none;color:#A1A1A1;font-size:0.8rem;padding:0.4rem 0.8rem;border-radius:8px;cursor:pointer;}
+.btn-sm.primary{background:#2F2F2F;color:#ECECEC;font-weight:600;}
+.page-tabs{display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin-bottom:1.5rem;}
+.page-tab{padding:0.5rem 1rem;font-size:0.85rem;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;font-weight:500;}
+.page-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+@media(max-width:900px){
+  .debate-arena,.models-bar,.score-grid,.stats-row{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav>
+  <div class="nav-logo" onclick="showPage('landing')">SYN<span>APSE</span></div>
+  <div class="nav-links">
+    <button class="nav-btn active" onclick="showPage('landing')">Home</button>
+    <button class="nav-btn" onclick="showPage('debate')">Debate</button>
+    <button class="nav-btn" onclick="showPage('explore')">Explore</button>
+    <button class="nav-btn" onclick="showPage('leaderboard')">Leaderboard</button>
+    <button class="nav-btn" onclick="showPage('about')">About</button>
+    <button class="nav-btn" onclick="showPage('pricing')">Pricing</button>
+  </div>
+  <div class="nav-right">
+    <button class="nav-btn" id="nav-auth-btn" onclick="showPage('login')">Sign In</button>
+    <button class="nav-btn" onclick="showPage('notifications')">🔔</button>
+    <div class="nav-user" id="user-badge" onclick="showPage('profile')" style="display:none;">VM</div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: LANDING
+════════════════════════════════════════════════ -->
+<div class="page active" id="page-landing">
+  <div class="hero">
+    <div class="hero-badge"><span class="badge-dot"></span>LOCAL-FIRST & PRIVACY ARCHITECTURE</div>
+    <h1><span class="line1">What if AI could</span> <span class="line2">argue with itself?</span></h1>
+    <p class="hero-sub">SYNAPSE pits three independent language models against each other, lets them debate your question, then synthesizes the single best answer from all of them.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="showPage('debate')">⚔ Start a Debate</button>
+      <button class="btn-secondary" onclick="showPage('about')">How it works →</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">3</div><div class="stat-label">LLM AGENTS</div></div>
+      <div class="stat"><div class="stat-num">2</div><div class="stat-label">DEBATE ROUNDS</div></div>
+      <div class="stat"><div class="stat-num">4</div><div class="stat-label">SCORE METRICS</div></div>
+      <div class="stat"><div class="stat-num">1</div><div class="stat-label">BEST RESOLUTION</div></div>
+    </div>
+  </div>
+
+  <div class="features-section">
+    <div class="section-tag">// ARCHITECTURE OVERVIEW</div>
+    <div class="section-title">One model isn't enough.</div>
+    <div class="section-sub">Single-model inference contains systematic biases and blind spots. Multi-agent debate extracts high-veracity insights through adversarial verification.</div>
+    
+    <div class="dropdown-section">
+      <div class="dropdown-header" onclick="toggleDropdown(this)">
+        <h3>⚔ Key Features</h3>
+        <span class="dropdown-toggle">⌄</span>
+      </div>
+      <div class="dropdown-content">
+        <div class="dropdown-item">
+          <div class="dropdown-item-title">Adversarial Debate</div>
+          <div class="dropdown-item-desc">Three models independently answer your question, then directly rebut each other's arguments in a second round to eliminate anchoring bias.</div>
+        </div>
+        <div class="dropdown-item">
+          <div class="dropdown-item-title">Multi-Dimensional Scoring</div>
+          <div class="dropdown-item-desc">Every response is scored on Factual Confidence, Clarity, Depth, and Originality by a dedicated judge model.</div>
+        </div>
+        <div class="dropdown-item">
+          <div class="dropdown-item-title">Answer Synthesis</div>
+          <div class="dropdown-item-desc">The judge doesn't just pick a winner — it merges the strongest elements of all three into one superior answer.</div>
+        </div>
+        <div class="dropdown-item">
+          <div class="dropdown-item-title">100% Zero-Data-Leak Local Mode</div>
+          <div class="dropdown-item-desc">Switch to local Ollama execution with one click. Zero prompt data ever leaves your computer.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dropdown-section">
+      <div class="dropdown-header" onclick="toggleDropdown(this)">
+        <h3>🔬 How It Works</h3>
+        <span class="dropdown-toggle">⌄</span>
+      </div>
+      <div class="dropdown-content">
+        <div class="dropdown-item">
+          <div class="dropdown-item-title">Round 1 — Independent Generation</div>
+          <div class="dropdown-item-desc">Three models answer in parallel without seeing the other viewpoints.</div>
+        </div>
+        <div class="dropdown-item">
+          <div class="dropdown-item-title">Round 2 — Adversarial Rebuttal</div>
+          <div class="dropdown-item-desc">Each model evaluates and critiques the competing arguments to expose logical flaws.</div>
+        </div>
+        <div class="dropdown-item">
+          <div class="dropdown-item-title">Judge Synthesis</div>
+          <div class="dropdown-item-desc">A larger model analyzes both rounds, scores performance, and generates an attributed final thesis.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: DEBATE
+════════════════════════════════════════════════ -->
+<div class="page" id="page-debate">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">MAIN</div>
+        <div class="sidebar-item active" onclick="showPage('debate')"><span class="si-icon">⚔️</span>New Debate</div>
+        <div class="sidebar-item" onclick="showPage('history')"><span class="si-icon">📜</span>History <span class="sidebar-badge" id="history-badge">0</span></div>
+        <div class="sidebar-item" onclick="showPage('explore')"><span class="si-icon">🔭</span>Explore</div>
+        <div class="sidebar-item" onclick="showPage('leaderboard')"><span class="si-icon">🏆</span>Leaderboard</div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">TOOLS</div>
+        <div class="sidebar-item" onclick="showPage('compare')"><span class="si-icon">⚖️</span>Model Compare</div>
+        <div class="sidebar-item" onclick="showPage('analytics')"><span class="si-icon">📊</span>Analytics</div>
+        <div class="sidebar-item" onclick="showPage('saved')"><span class="si-icon">🔖</span>Saved Debates</div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">ACCOUNT</div>
+        <div class="sidebar-item" onclick="showPage('profile')"><span class="si-icon">👤</span>Profile</div>
+        <div class="sidebar-item" onclick="showPage('settings')"><span class="si-icon">⚙️</span>Settings</div>
+        <div class="sidebar-item" onclick="showPage('notifications')"><span class="si-icon">🔔</span>Notifications <span class="sidebar-badge" id="notif-badge">3</span></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">INFERENCE ENGINE</div>
+        <div style="padding:0 1.25rem;">
+          <select id="engine-selector" style="width:100%;background:var(--surface2);color:var(--text);border:none;border-radius:8px;padding:0.6rem;font-size:0.8rem;outline:none;">
+            <option value="groq">Groq Cloud (Fast)</option>
+            <option value="ollama">Ollama Local (Private)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="page-header">
+        <div><h1>New Debate</h1><p>Ask anything. Let the models argue it out.</p></div>
+        <div class="header-actions">
+          <button class="btn-sm" onclick="showPage('settings')">⚙ Config</button>
+          <button class="btn-sm primary" onclick="showPage('history')">View History</button>
+        </div>
+      </div>
+      <div class="content-pad">
+
+        <!-- Models Bar -->
+        <div class="models-bar">
+          <div class="model-card">
+            <div class="model-dot" style="background:var(--llm1);"></div>
+            <div class="model-info">
+              <div class="model-name" style="color:var(--llm1);">GPT-OSS 20B</div>
+              <div class="model-role">Agent Alpha</div>
+            </div>
+            <span class="model-status status-ready" id="status-1">READY</span>
+          </div>
+          <div class="model-card">
+            <div class="model-dot" style="background:var(--llm2);"></div>
+            <div class="model-info">
+              <div class="model-name" style="color:var(--llm2);">Qwen 3.8 27B</div>
+              <div class="model-role">Agent Beta</div>
+            </div>
+            <span class="model-status status-ready" id="status-2">READY</span>
+          </div>
+          <div class="model-card">
+            <div class="model-dot" style="background:var(--llm3);"></div>
+            <div class="model-info">
+              <div class="model-name" style="color:var(--llm3);">Allam 2 7B</div>
+              <div class="model-role">Agent Gamma</div>
+            </div>
+            <span class="model-status status-ready" id="status-3">READY</span>
+          </div>
+        </div>
+
+        <!-- Question Input -->
+        <div class="question-box">
+          <div class="question-box-top">
+            <span class="q-label">// MOTION / RESOLUTION</span>
+            <span class="chip" id="privacy-tag"><span class="chip-dot" style="background:var(--accent3);"></span>Cloud Active</span>
+          </div>
+          <textarea class="q-textarea" id="question-input" placeholder="e.g. Is artificial general intelligence achievable within the next 10 years? What are the biggest obstacles?"></textarea>
+          <div class="q-actions">
+            <div class="q-meta">
+              <span class="q-tag active" id="mode-standard" onclick="setMode('standard')">Standard</span>
+              <span class="q-tag" id="mode-deep" onclick="setMode('deep')">Deep Debate</span>
+              <span class="q-tag" id="mode-quick" onclick="setMode('quick')">Quick</span>
+            </div>
+            <button class="debate-btn" id="debate-btn" onclick="executeDebateFlow()">⚔ Start Debate</button>
+          </div>
+        </div>
+
+        <!-- Round Indicator -->
+        <div class="round-indicator">
+          <span class="round-pill active" id="round-1-pill">Round 1 — Independent</span>
+          <span style="color:var(--text3);">→</span>
+          <span class="round-pill" id="round-2-pill">Round 2 — Rebuttal</span>
+          <span style="color:var(--text3);">→</span>
+          <span class="round-pill" id="round-judge-pill">Judge Synthesis</span>
+        </div>
+
+        <!-- Round 1 Section -->
+        <div id="round1-section" style="margin-bottom: 2rem;">
+          <div style="font-size:0.75rem;color:var(--text3);margin-bottom:0.75rem;">// ROUND 1 — INDEPENDENT ARGUMENTS</div>
+          <div class="debate-arena">
+            <div class="agent-card">
+              <div class="agent-header">
+                <div class="agent-avatar" style="background:rgba(0,212,255,0.15);color:var(--llm1);">α</div>
+                <div><div style="font-size:0.8rem;font-weight:700;color:var(--llm1);">GPT-OSS 20B</div><div style="font-size:0.65rem;color:var(--text3);">Agent Alpha</div></div>
+              </div>
+              <div class="agent-body">
+                <div class="agent-placeholder" id="placeholder-1">Waiting for debate to start...</div>
+                <div class="agent-text" id="agent-text-1" style="display:none;"></div>
+              </div>
+            </div>
+            <div class="agent-card">
+              <div class="agent-header">
+                <div class="agent-avatar" style="background:rgba(0,255,157,0.15);color:var(--llm2);">β</div>
+                <div><div style="font-size:0.8rem;font-weight:700;color:var(--llm2);">Qwen 3.8 27B</div><div style="font-size:0.65rem;color:var(--text3);">Agent Beta</div></div>
+              </div>
+              <div class="agent-body">
+                <div class="agent-placeholder" id="placeholder-2">Waiting for debate to start...</div>
+                <div class="agent-text" id="agent-text-2" style="display:none;"></div>
+              </div>
+            </div>
+            <div class="agent-card">
+              <div class="agent-header">
+                <div class="agent-avatar" style="background:rgba(168,85,247,0.15);color:var(--llm3);">γ</div>
+                <div><div style="font-size:0.8rem;font-weight:700;color:var(--llm3);">Allam 2 7B</div><div style="font-size:0.65rem;color:var(--text3);">Agent Gamma</div></div>
+              </div>
+              <div class="agent-body">
+                <div class="agent-placeholder" id="placeholder-3">Waiting for debate to start...</div>
+                <div class="agent-text" id="agent-text-3" style="display:none;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Round 2 Section -->
+        <div id="round2-section" style="display:none; margin-bottom: 2rem;">
+          <div style="font-size:0.75rem;color:var(--text3);margin-bottom:0.75rem;">// ROUND 2 — REBUTTAL & REFINEMENT</div>
+          <div class="debate-arena">
+            <div class="agent-card">
+              <div class="agent-header">
+                <div class="agent-avatar" style="background:rgba(0,212,255,0.15);color:var(--llm1);">α</div>
+                <div><div style="font-size:0.8rem;font-weight:700;color:var(--llm1);">GPT-OSS Rebuttal</div><div style="font-size:0.65rem;color:var(--text3);">Critiques β & γ</div></div>
+              </div>
+              <div class="agent-body"><div class="agent-text loaded" id="rebuttal-1"></div></div>
+            </div>
+            <div class="agent-card">
+              <div class="agent-header">
+                <div class="agent-avatar" style="background:rgba(0,255,157,0.15);color:var(--llm2);">β</div>
+                <div><div style="font-size:0.8rem;font-weight:700;color:var(--llm2);">Qwen Rebuttal</div><div style="font-size:0.65rem;color:var(--text3);">Critiques α & γ</div></div>
+              </div>
+              <div class="agent-body"><div class="agent-text loaded" id="rebuttal-2"></div></div>
+            </div>
+            <div class="agent-card">
+              <div class="agent-header">
+                <div class="agent-avatar" style="background:rgba(168,85,247,0.15);color:var(--llm3);">γ</div>
+                <div><div style="font-size:0.8rem;font-weight:700;color:var(--llm3);">Allam Rebuttal</div><div style="font-size:0.65rem;color:var(--text3);">Critiques α & β</div></div>
+              </div>
+              <div class="agent-body"><div class="agent-text loaded" id="rebuttal-3"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Score Panel -->
+        <div class="score-panel" id="score-section" style="display:none;">
+          <div class="score-panel-title">📊 Judge Evaluation Matrix</div>
+          <div class="score-grid">
+            <div class="score-item">
+              <div class="score-agent-name" style="color:var(--llm1);">α GPT-OSS 20B</div>
+              <div class="score-metrics" id="scores-1"></div>
+              <div class="score-total"><span class="score-total-label">TOTAL SCORE</span><span class="score-total-val" style="color:var(--llm1);" id="total-1">—</span></div>
+            </div>
+            <div class="score-item">
+              <div class="score-agent-name" style="color:var(--llm2);">β Qwen 3.8 27B</div>
+              <div class="score-metrics" id="scores-2"></div>
+              <div class="score-total"><span class="score-total-label">TOTAL SCORE</span><span class="score-total-val" style="color:var(--llm2);" id="total-2">—</span></div>
+            </div>
+            <div class="score-item">
+              <div class="score-agent-name" style="color:var(--llm3);">γ Allam 2 7B</div>
+              <div class="score-metrics" id="scores-3"></div>
+              <div class="score-total"><span class="score-total-label">TOTAL SCORE</span><span class="score-total-val" style="color:var(--llm3);" id="total-3">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final Synthesis Section -->
+        <div class="final-card" id="final-section" style="display:none;">
+          <div class="final-header">
+            <div class="final-icon">⚖️</div>
+            <div>
+              <div class="final-title">SYNTHESIZED BEST RESOLUTION</div>
+              <div class="final-subtitle">Impartial Judge Synthesis · Integrating Strongest Arguments</div>
+            </div>
+          </div>
+          <div class="final-text" id="final-text"></div>
+          <div class="final-attribution" id="final-attribution"></div>
+          <div style="display:flex;gap:0.75rem;margin-top:1.25rem;">
+            <button class="btn-sm primary" onclick="copyFinal()">📋 Copy Answer</button>
+            <button class="btn-sm" onclick="saveCurrentDebate()">💾 Bookmark to Saved</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: LEADERBOARD
+════════════════════════════════════════════════ -->
+<div class="page" id="page-leaderboard">
+  <div class="page-header">
+    <div><h1>Model Performance Leaderboard</h1><p>Rankings across multi-agent adversarial debate rounds.</p></div>
+  </div>
+  <div class="content-pad">
+    <div class="page-tabs">
+      <div class="page-tab active" onclick="filterLeaderboard('overall', this)">Overall</div>
+      <div class="page-tab" onclick="filterLeaderboard('factual', this)">Factual Confidence</div>
+      <div class="page-tab" onclick="filterLeaderboard('clarity', this)">Clarity</div>
+      <div class="page-tab" onclick="filterLeaderboard('depth', this)">Depth</div>
+      <div class="page-tab" onclick="filterLeaderboard('originality', this)">Originality</div>
+    </div>
+    <div class="leaderboard-table">
+      <div class="lb-header">
+        <div>RANK</div><div>MODEL</div>
+        <div style="text-align:center;">FACTUAL</div>
+        <div style="text-align:center;">CLARITY</div>
+        <div style="text-align:center;">DEPTH</div>
+        <div style="text-align:center;">OVERALL</div>
+      </div>
+      <div class="lb-row" id="lb-row-qwen">
+        <div class="lb-rank" style="color:gold;">🥇 1</div>
+        <div><strong>Qwen 3.8 27B</strong><div style="font-size:0.7rem;color:var(--text3);">Alibaba · Analytical Rigor & Empirical Evidence</div></div>
+        <div class="lb-val" style="color:var(--accent3);">9.3</div>
+        <div class="lb-val" style="color:var(--accent3);">8.9</div>
+        <div class="lb-val" style="color:var(--accent3);">9.5</div>
+        <div class="lb-val" style="color:var(--accent);font-size:1rem;font-weight:800;">9.2</div>
+      </div>
+      <div class="lb-row" id="lb-row-gpt">
+        <div class="lb-rank" style="color:silver;">🥈 2</div>
+        <div><strong>GPT-OSS 20B</strong><div style="font-size:0.7rem;color:var(--text3);">OpenAI · Concise Logical Argumentation</div></div>
+        <div class="lb-val">8.8</div>
+        <div class="lb-val">9.2</div>
+        <div class="lb-val">8.5</div>
+        <div class="lb-val" style="color:var(--accent);font-size:1rem;font-weight:800;">8.8</div>
+      </div>
+      <div class="lb-row" id="lb-row-allam">
+        <div class="lb-rank" style="color:#cd7f32;">🥉 3</div>
+        <div><strong>Allam 2 7B</strong><div style="font-size:0.7rem;color:var(--text3);">Diverse Contextual & Dialectical Perspectives</div></div>
+        <div class="lb-val">8.4</div>
+        <div class="lb-val">8.7</div>
+        <div class="lb-val">8.6</div>
+        <div class="lb-val" style="color:var(--accent);font-size:1rem;font-weight:800;">8.6</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank" style="color:var(--judge);">⚖️ J</div>
+        <div><strong>GPT-OSS 120B</strong><div style="font-size:0.7rem;color:var(--text3);">Supreme Judge & Synthesis Arbiter (Unranked)</div></div>
+        <div class="lb-val" style="color:var(--text3);">—</div>
+        <div class="lb-val" style="color:var(--text3);">—</div>
+        <div class="lb-val" style="color:var(--text3);">—</div>
+        <div class="lb-val" style="color:var(--text3);">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: ABOUT (ACADEMIC & RESEARCH FOUNDATION)
+════════════════════════════════════════════════ -->
+<div class="page" id="page-about">
+  <div class="about-hero" style="padding:4rem 2rem 2rem;text-align:center;border-bottom:1px solid var(--border);">
+    <div class="section-tag">// ARCHITECTURAL SPECIFICATION & RESEARCH FOUNDATION</div>
+    <div class="section-title">Why Multi-Agent Debate Eliminates Hallucination</div>
+    <p style="color:var(--text2);max-width:700px;margin:1rem auto 0;line-height:1.8;font-size:1rem;">
+      SYNAPSE operationalizes dialectical argumentation to transform LLM inference from brittle single-model monologues into error-correcting scientific discourse.
+    </p>
+  </div>
+  
+  <div class="content-pad" style="max-width:900px;margin:0 auto;padding-top:2rem;">
+    
+    <!-- SECTION 1 -->
+    <div class="dropdown-section" style="margin-bottom:1.5rem;">
+      <div class="dropdown-header" onclick="toggleDropdown(this)">
+        <h3>🧠 The Problem: The Single-Model Monologue</h3>
+        <span class="dropdown-toggle active">⌄</span>
+      </div>
+      <div class="dropdown-content active">
+        <p style="color:var(--text2);line-height:1.8;margin-bottom:1rem;">
+          When querying an isolated language model, users face three unavoidable failure modes:
+        </p>
+        <ul style="color:var(--text2);margin-left:1.5rem;line-height:1.8;">
+          <li><strong>Autoregressive Cascades:</strong> Once an LLM samples a subtly erroneous token, its subsequent attention layers accept that assertion as ground truth, compounding the error across the entire answer.</li>
+          <li><strong>Sycophancy & Anchoring:</strong> Models naturally conform to the user's premise. If asked <em>"Why is strategy X bad?"</em>, a single model validates the negative framing rather than stress-testing alternatives.</li>
+          <li><strong>Verification Blindspots:</strong> Prompting an LLM to "check its own work" fails because the model verifies with the same latent-space biases that caused the original error.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SECTION 2 -->
+    <div class="dropdown-section" style="margin-bottom:1.5rem;">
+      <div class="dropdown-header" onclick="toggleDropdown(this)">
+        <h3>🔬 The Peer-Reviewed Research Foundation</h3>
+        <span class="dropdown-toggle active">⌄</span>
+      </div>
+      <div class="dropdown-content active">
+        <div style="background:var(--surface2);border-radius:10px;padding:1.25rem;margin-bottom:1rem;">
+          <span style="background:rgba(0,212,255,0.1);color:var(--accent);font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-weight:700;display:inline-block;margin-bottom:0.5rem;">Du et al., 2023 (MIT / Google Brain)</span>
+          <h4 style="margin-bottom:0.4rem;">Improving Factuality and Reasoning via Multi-Agent Debate</h4>
+          <p style="color:var(--text2);font-size:0.875rem;line-height:1.7;">
+            Demonstrated that independent LLM agents cross-examining each other in structured rounds produce statistically significant drops in hallucinations and arithmetic errors compared to Chain-of-Thought or Self-Reflection prompting.
+          </p>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:1.25rem;">
+          <span style="background:rgba(0,255,157,0.1);color:var(--accent3);font-size:0.7rem;padding:0.2rem 0.5rem;border-radius:4px;font-weight:700;display:inline-block;margin-bottom:0.5rem;">Chan et al., 2023 (Tsinghua / ChatEval)</span>
+          <h4 style="margin-bottom:0.4rem;">Multi-Agent Refereeing and Evaluation (ChatEval)</h4>
+          <p style="color:var(--text2);font-size:0.875rem;line-height:1.7;">
+            Showed that multi-agent debate structures mirror human panel reviews, outperforming traditional single-judge LLMs in objectivity and nuance.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="dropdown-section" style="margin-bottom:1.5rem;">
+      <div class="dropdown-header" onclick="toggleDropdown(this)">
+        <h3>⚙️ The SYNAPSE 3-Tier Pipeline</h3>
+        <span class="dropdown-toggle active">⌄</span>
+      </div>
+      <div class="dropdown-content active">
+        <div style="display:flex;flex-direction:column;gap:1rem;color:var(--text2);line-height:1.7;">
+          <div>
+            <strong style="color:var(--llm1);">Tier 1 — Isolated Exploration:</strong>
+            Three heterogeneous models generate answers without seeing the others. This enforces diversity of thought and isolates baseline assertions.
+          </div>
+          <div>
+            <strong style="color:var(--llm2);">Tier 2 — Cross-Critique (Adversarial Rebuttal):</strong>
+            Each model receives the competitors' arguments. Agents must actively falsify opponent logic and defend or refine their claims against empirical counter-evidence.
+          </div>
+          <div>
+            <strong style="color:var(--judge);">Tier 3 — Impartial Synthesis:</strong>
+            A 120B parameter judge model scores all rounds across 4 dimensions (factual validity, clarity, depth, originality) and produces a final, attributed synthesis combining only the verified arguments.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="dropdown-section" style="margin-bottom:1.5rem;">
+      <div class="dropdown-header" onclick="toggleDropdown(this)">
+        <h3>🛡️ Zero-Data-Leak Local Privacy Architecture</h3>
+        <span class="dropdown-toggle active">⌄</span>
+      </div>
+      <div class="dropdown-content active">
+        <p style="color:var(--text2);line-height:1.8;">
+          SYNAPSE features dual-engine routing: choose <strong>Groq Cloud</strong> for sub-second responses or switch to <strong>Ollama Local Mode</strong>. In Local Mode, prompts are dispatched strictly to <code>localhost:11434</code> and stored in your browser's sandboxed <code>localStorage</code>. Zero telemetry or prompt tokens leave your device.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: PROFILE
+════════════════════════════════════════════════ -->
+<div class="page" id="page-profile">
+  <div class="content-pad" style="max-width:900px;margin:0 auto;">
+    <div class="profile-hero">
+      <div class="profile-avatar" id="profile-avatar-display">VM</div>
+      <div>
+        <div class="profile-name" id="profile-name-display" style="font-size:1.5rem;font-weight:700;">Venkateswarlu Munna</div>
+        <div class="profile-handle" id="profile-email-display" style="color:var(--text3);font-size:0.875rem;">@venky_aiml</div>
+        <div class="profile-badges">
+          <span class="profile-badge">🎓 AIML Student</span>
+          <span class="profile-badge">⚔️ Debate Enthusiast</span>
+          <span class="profile-badge">🔬 Beta Tester</span>
+        </div>
+      </div>
+      <div style="margin-left:auto;">
+        <button class="btn-sm primary" onclick="alert('Profile details are synced from local sessions.')">Edit Profile</button>
+      </div>
+    </div>
+    
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-card-val" id="prof-stat-debates">0</div><div class="stat-card-label">DEBATES STARTED</div></div>
+      <div class="stat-card"><div class="stat-card-val" id="prof-stat-score">0.0</div><div class="stat-card-label">AVG DEBATE SCORE</div></div>
+      <div class="stat-card"><div class="stat-card-val" id="prof-stat-saved">0</div><div class="stat-card-label">DEBATES SAVED</div></div>
+      <div class="stat-card"><div class="stat-card-val" id="prof-stat-agents">0</div><div class="stat-card-label">TOTAL AGENTS RUN</div></div>
+    </div>
+
+    <div class="dropdown-section" style="margin-bottom:1.25rem;">
+      <div class="dropdown-header"><h3>📊 Favourite Topics</h3></div>
+      <div style="padding:1.25rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <span class="q-tag active">Artificial Intelligence</span>
+        <span class="q-tag">Philosophy</span>
+        <span class="q-tag">Science</span>
+        <span class="q-tag">Ethics</span>
+        <span class="q-tag">Technology</span>
+      </div>
+    </div>
+
+    <div class="dropdown-section">
+      <div class="dropdown-header"><h3>🏆 Achievements</h3></div>
+      <div style="padding:1.25rem;display:flex;flex-direction:column;gap:0.75rem;">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div style="font-size:1.5rem;">🎯</div>
+          <div><div style="font-size:0.875rem;font-weight:600;">First Debate</div><div style="font-size:0.75rem;color:var(--text3);">Completed your first multi-agent debate</div></div>
+          <span class="profile-badge" style="margin-left:auto;color:var(--accent3);">EARNED</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div style="font-size:1.5rem;">🔥</div>
+          <div><div style="font-size:0.875rem;font-weight:600;">Debate Streak</div><div style="font-size:0.75rem;color:var(--text3);">5 debates recorded locally</div></div>
+          <span class="profile-badge" style="margin-left:auto;color:var(--accent3);">EARNED</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: NOTIFICATIONS
+════════════════════════════════════════════════ -->
+<div class="page" id="page-notifications">
+  <div class="page-header">
+    <div><h1>Notifications</h1><p>Your activity and system alerts.</p></div>
+    <div class="header-actions">
+      <button class="btn-sm" onclick="markAllNotificationsRead()">Mark all read</button>
+    </div>
+  </div>
+  <div class="content-pad" style="max-width:800px;margin:0 auto;">
+    <div class="notif-list" id="notif-container">
+      <div class="notif-item unread">
+        <div class="notif-icon">⚔️</div>
+        <div>
+          <div style="font-size:0.875rem;font-weight:600;">Debate Engine Online</div>
+          <div style="font-size:0.75rem;color:var(--text3);margin-top:0.2rem;">Multi-agent debate models loaded and ready.</div>
+        </div>
+        <div style="margin-left:auto;font-size:0.7rem;color:var(--text3);">Just now</div>
+      </div>
+      <div class="notif-item unread">
+        <div class="notif-icon">🏆</div>
+        <div>
+          <div style="font-size:0.875rem;font-weight:600;">System Ready</div>
+          <div style="font-size:0.75rem;color:var(--text3);margin-top:0.2rem;">Local and Cloud inference routes verified.</div>
+        </div>
+        <div style="margin-left:auto;font-size:0.7rem;color:var(--text3);">10m ago</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: MODEL COMPARE
+════════════════════════════════════════════════ -->
+<div class="page" id="page-compare">
+  <div class="page-header">
+    <div><h1>Model Comparison</h1><p>Side-by-side analysis of active debate models.</p></div>
+  </div>
+  <div class="content-pad">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;">
+      <div class="dropdown-section" style="border-top:3px solid var(--llm1);">
+        <div style="padding:1.5rem;">
+          <h3 style="color:var(--llm1);font-size:1rem;font-weight:700;margin-bottom:1rem;">α GPT-OSS 20B</h3>
+          <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1rem;">Focuses on concise logical deduction, direct point-by-point framing, and low-latency responses.</p>
+          <div style="font-size:0.75rem;color:var(--text3);">Best for: Quick debates, structural refutations</div>
+        </div>
+      </div>
+      <div class="dropdown-section" style="border-top:3px solid var(--llm2);">
+        <div style="padding:1.5rem;">
+          <h3 style="color:var(--llm2);font-size:1rem;font-weight:700;margin-bottom:1rem;">β Qwen 3.8 27B</h3>
+          <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1rem;">High-capacity analytical model. Excels at technical context, mathematical nuances, and statistical reasoning.</p>
+          <div style="font-size:0.75rem;color:var(--text3);">Best for: Deep rebuttal rounds, factual challenges</div>
+        </div>
+      </div>
+      <div class="dropdown-section" style="border-top:3px solid var(--llm3);">
+        <div style="padding:1.5rem;">
+          <h3 style="color:var(--llm3);font-size:1rem;font-weight:700;margin-bottom:1rem;">γ Allam 2 7B</h3>
+          <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1rem;">Provides diverse framing, counter-theses, and non-standard perspectives to prevent consensus collapse.</p>
+          <div style="font-size:0.75rem;color:var(--text3);">Best for: Conceptual breadth, philosophical prompts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: ANALYTICS
+════════════════════════════════════════════════ -->
+<div class="page" id="page-analytics">
+  <div class="page-header">
+    <div><h1>Analytics</h1><p>Performance tracking across debate categories.</p></div>
+  </div>
+  <div class="content-pad">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-card-val" id="analytics-debates">0</div><div class="stat-card-label">TOTAL DEBATES</div></div>
+      <div class="stat-card"><div class="stat-card-val">Qwen 3.8</div><div class="stat-card-label">TOP PERFORMING AGENT</div></div>
+      <div class="stat-card"><div class="stat-card-val">Science & AI</div><div class="stat-card-label">TOP TOPIC</div></div>
+      <div class="stat-card"><div class="stat-card-val">8.9</div><div class="stat-card-label">AVG BENCHMARK SCORE</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: SAVED
+════════════════════════════════════════════════ -->
+<div class="page" id="page-saved">
+  <div class="page-header">
+    <div><h1>Saved Debates</h1><p>Resolutions bookmarked for study and reference.</p></div>
+  </div>
+  <div class="content-pad">
+    <div class="history-list" id="saved-list-dynamic"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: HISTORY
+════════════════════════════════════════════════ -->
+<div class="page" id="page-history">
+  <div class="page-header">
+    <div><h1>Debate History</h1><p>Debates stored directly on your machine.</p></div>
+    <div class="header-actions">
+      <button class="btn-sm primary" onclick="showPage('debate')">+ New Debate</button>
+    </div>
+  </div>
+  <div class="content-pad">
+    <div id="history-list-dynamic"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: EXPLORE
+════════════════════════════════════════════════ -->
+<div class="page" id="page-explore">
+  <div class="page-header">
+    <div><h1>Explore Debates</h1><p>Ready-to-run questions across science, ethics, and policy.</p></div>
+  </div>
+  <div class="content-pad">
+    <div class="explore-grid" id="explore-grid-dynamic"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: SIGN IN / OTP VERIFICATION
+════════════════════════════════════════════════ -->
+<div class="page" id="page-login">
+  <div class="onboard-wrap">
+    <div class="onboard-card">
+      <div class="onboard-logo">SYNAPSE</div>
+      <div class="onboard-title">Authentication Required</div>
+      <div class="onboard-sub">Sign in with an email verification code.</div>
+
+      <div id="otp-step-1">
+        <div class="form-group">
+          <label class="form-label">FULL NAME (IF FIRST TIME)</label>
+          <input class="form-input" id="login-name" placeholder="Venkateswarlu Munna" type="text"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">EMAIL ADDRESS</label>
+          <input class="form-input" id="login-target" placeholder="you@example.com" type="email" autocomplete="email"/>
+        </div>
+        <button class="btn-primary" style="width:100%; margin-top:0.5rem;" onclick="requestOTP()">Send Verification Code →</button>
+      </div>
+
+      <div id="otp-step-2" style="display:none;">
+        <div id="otp-sent-label" style="font-size:0.8rem; color:var(--accent); margin-bottom:1rem;"></div>
+        <div class="form-group">
+          <label class="form-label">6-DIGIT VERIFICATION CODE</label>
+          <input class="form-input" id="login-otp-code" placeholder="123456" maxlength="6" type="text" style="text-align:center; letter-spacing:0.25em; font-size:1.2rem;"/>
+        </div>
+        <button class="btn-primary" style="width:100%;" onclick="verifyOTP()">Verify &amp; Enter App</button>
+        <div style="text-align:center; margin-top:1rem;">
+          <a onclick="document.getElementById('otp-step-1').style.display='block';document.getElementById('otp-step-2').style.display='none';" style="font-size:0.8rem; color:var(--text3); cursor:pointer;">← Change email</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: SIGN UP
+════════════════════════════════════════════════ -->
+<div class="page" id="page-signup">
+  <div class="onboard-wrap">
+    <div class="onboard-card">
+      <div class="onboard-logo">SYNAPSE</div>
+      <div class="onboard-title">Create account</div>
+      <div class="onboard-sub">Local credential registration with secure verification.</div>
+      <div class="form-group">
+        <label class="form-label">FULL NAME</label>
+        <input class="form-input" id="reg-name" placeholder="Venkateswarlu Munna" type="text"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">EMAIL</label>
+        <input class="form-input" id="reg-email" placeholder="you@example.com" type="email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">PASSWORD</label>
+        <input class="form-input" id="reg-password" placeholder="Min. 8 characters" type="password"/>
+      </div>
+      <button class="btn-primary" style="width:100%;" onclick="handleRegister()">Register Account</button>
+      <div class="form-switch">Already registered? <a onclick="showPage('login')">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: PRICING
+════════════════════════════════════════════════ -->
+<div class="page" id="page-pricing">
+  <div class="page-header" style="text-align:center;display:block;">
+    <h1>Zero Subscription Fees</h1>
+    <p>Run entirely local via Ollama with zero token cost, or connect directly to Groq's free API tier.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: SETTINGS
+════════════════════════════════════════════════ -->
+<div class="page" id="page-settings">
+  <div class="page-header">
+    <div><h1>Settings</h1><p>Configure model inference engines and local persistence.</p></div>
+  </div>
+  <div class="content-pad" style="max-width:800px;margin:0 auto;">
+    <div class="dropdown-section">
+      <div style="padding:1.5rem;">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">Inference Engine Configuration</h3>
+        <p style="color:var(--text2);font-size:0.85rem;line-height:1.6;margin-bottom:1.25rem;">
+          Select your default inference execution mode. Local mode connects directly to your local Ollama port (<code>11434</code>) without network calls.
+        </p>
+        <select id="settings-engine-mode" style="width:100%;background:var(--surface2);color:var(--text);border:none;border-radius:8px;padding:0.75rem;font-size:0.9rem;">
+          <option value="groq">Groq Cloud (Fast)</option>
+          <option value="ollama">Ollama Local (Zero-Data-Leak)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="js/auth.js"></script>
+<script src="js/route_guard.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
